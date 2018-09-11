@@ -13,6 +13,7 @@ import tensorflow_encrypted as tfe
 parser = argparse.ArgumentParser(description='Runs the specified model with the specified input')
 parser.add_argument('model_path', type=str, help='path to model')
 parser.add_argument('input_path', type=str, help='path to input to model')
+parser.add_argument('--config', type=str, help='load a custom config')
 args = parser.parse_args()
 
 model_path = args.model_path
@@ -22,11 +23,16 @@ with gfile.FastGFile(model_path, 'rb') as f:
 
 input_path = args.input_path
 
-config = tfe.LocalConfig([
-    'server0',
-    'server1',
-    'crypto_producer'
-])
+if args.config is not None:
+    config = tfe.config.load(args.config)
+else:
+    config = tfe.LocalConfig([
+        'server0',
+        'server1',
+        'crypto-producer',
+        'prediction-client',
+        'weights-provider'
+    ])
 
 
 class PredictionInputProvider(tfe.io.InputProvider):
@@ -36,11 +42,11 @@ class PredictionInputProvider(tfe.io.InputProvider):
         return tf.constant(input, tf.float32)
 
 
-with tfe.protocol.Pond(*config.get_players('server0, server1, crypto_producer')) as prot:
-    input = PredictionInputProvider(config.get_player('crypto_producer'))
+with tfe.protocol.Pond(*config.get_players('server0, server1, crypto-producer')) as prot:
+    input = PredictionInputProvider(config.get_player('prediction-client'))
     input.input_path = input_path
 
-    c = convert.Converter(config, prot, config.get_player('crypto_producer'))
+    c = convert.Converter(config, prot, config.get_player('weights-provider'))
     x = c.convert(graph_def, input, register())
 
     with config.session() as sess:
