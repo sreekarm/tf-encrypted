@@ -317,17 +317,29 @@ def run(
         run_tag = os.path.join(__TENSORBOARD_DIR__, session_tag)
         _run_counter[tag] += 1
 
+        merged = tf.summary.merge_all()
         writer = tf.summary.FileWriter(run_tag, sess.graph)
         run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
         run_metadata = tf.RunMetadata()
-
-        results = sess.run(
-            fetches,
-            feed_dict=feed_dict,
-            options=run_options,
-            run_metadata=run_metadata
-        )
-
+        if tag =='init':
+            #results, summary = sess.run(
+            #    [fetches, merged],
+            results = sess.run(
+                fetches,
+                feed_dict=feed_dict,
+                options=run_options,
+                run_metadata=run_metadata
+            )
+        else:
+            results, summary = sess.run(
+                [fetches, merged],
+            #results = sess.run(
+            #    fetches,
+                feed_dict=feed_dict,
+                options=run_options,
+                run_metadata=run_metadata
+            )
+            writer.add_summary(summary, 0)
         writer.add_run_metadata(run_metadata, session_tag)
         writer.close()
 

@@ -24,6 +24,19 @@ else:
     ])
 
 
+def variable_summaries(var):
+    """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
+    with tf.name_scope('summaries'):
+        mean = tf.reduce_mean(var)
+        tf.summary.scalar('mean', mean)
+        with tf.name_scope('stddev'):
+            stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+            tf.summary.scalar('stddev', stddev)
+        tf.summary.scalar('max', tf.reduce_max(var))
+        tf.summary.scalar('min', tf.reduce_min(var))
+        tf.summary.histogram('histogram', var)
+
+
 class ModelTrainer(tfe.io.InputProvider):
 
     BATCH_SIZE = 32
@@ -58,12 +71,24 @@ class ModelTrainer(tfe.io.InputProvider):
         r_out = math.sqrt(12 / (k + m))
 
         # model parameters and initial values
-        w0 = tf.Variable(tf.random_uniform([j, k], minval=-r_in, maxval=r_in))
-        b0 = tf.Variable(tf.zeros([k]))
-        w1 = tf.Variable(tf.random_uniform([k, k], minval=-r_hid, maxval=r_hid))
-        b1 = tf.Variable(tf.zeros([k]))
-        w2 = tf.Variable(tf.random_uniform([k, m], minval=-r_out, maxval=r_out))
-        b2 = tf.Variable(tf.zeros([m]))
+        with tf.name_scope('weights_0'):
+            w0 = tf.Variable(tf.random_uniform([j, k], minval=-r_in, maxval=r_in))
+            variable_summaries(w0)
+        with tf.name_scope('biases_0'):
+            b0 = tf.Variable(tf.zeros([k]))
+            variable_summaries(b0)
+        with tf.name_scope('weights_1'):
+            w1 = tf.Variable(tf.random_uniform([k, k], minval=-r_hid, maxval=r_hid))
+            variable_summaries(w1)
+        with tf.name_scope('biases_1'):
+            b1 = tf.Variable(tf.zeros([k]))
+            variable_summaries(b1)
+        with tf.name_scope('weights_2'):
+            w2 = tf.Variable(tf.random_uniform([k, m], minval=-r_out, maxval=r_out))
+            variable_summaries(w2)
+        with tf.name_scope('biases_1'):
+            b2 = tf.Variable(tf.zeros([m]))
+            variable_summaries(b2)
         params = [w0, b0, w1, b1, w2, b2]
 
         # optimizer and data pipeline
@@ -81,6 +106,30 @@ class ModelTrainer(tfe.io.InputProvider):
             layer2 = tf.nn.relu(tf.matmul(layer1, w1) + b1)
             layer3 = tf.matmul(layer2, w2) + b2
             predictions = layer3
+
+            # # model construction
+            # layer0 = x
+            # with tf.name_scope('W0x_plus_b0_bf_relu'):
+            #     layer1_bf_relu = tf.matmul(layer0, w0) + b0
+            #     tf.summary.histogram('layer1_bf_relu', layer1_bf_relu)
+            #
+            # with tf.name_scope('W0x_plus_b0_aft_relu'):
+            #     layer1_aft_relu = tf.nn.relu(layer1_bf_relu)
+            #     tf.summary.histogram('layer1_aft_relu', layer1_aft_relu)
+            #
+            # with tf.name_scope('W1x_plus_b1_bf_relu'):
+            #     layer2_bf_relu = tf.matmul(layer1_aft_relu, w1) + b1
+            #     tf.summary.histogram('layer2_bf_relu', layer2_bf_relu)
+            #
+            # with tf.name_scope('W1x_plus_b1_aft_relu'):
+            #     layer2_aft_relu = tf.nn.relu(layer2_bf_relu)
+            #     tf.summary.histogram('layer2_aft_relu', layer2_aft_relu)
+            #
+            # with tf.name_scope('W2x_plus_b2'):
+            #     layer3 = tf.matmul(layer2_aft_relu, w2) + b2
+            #     tf.summary.histogram('layer3', layer3)
+            #
+            # predictions = layer3
 
             loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(logits=predictions, labels=y))
             with tf.control_dependencies([optimizer.minimize(loss)]):
