@@ -14,6 +14,7 @@ def register() -> Dict[str, Any]:
         'Placeholder': placeholder,
         'Const': constant,
         'Conv2D': conv2d,
+        'Conv2DBackpropInput': conv2d_tranpose,
         'Relu': relu,
         'Sigmoid': sigmoid,
         'MatMul': matmul,
@@ -35,6 +36,25 @@ def register() -> Dict[str, Any]:
     }
 
     return reg
+
+
+def batchnorm(converter: Converter, node: Any, inputs: List[str]) -> Any:
+    input = converter.outputs[inputs[0]]
+    scale = nodef_to_numpy_array(converter.outputs[inputs[1]])
+    offset = nodef_to_numpy_array(converter.outputs[inputs[2]])
+    mean = nodef_to_numpy_array(converter.outputs[inputs[3]])
+    variance = nodef_to_numpy_array(converter.outputs[inputs[4]])
+
+    epsilon = node.attr["epsilon"]
+
+    print(input.shape)
+
+    layer = Batchnorm(input.shape.as_list(), mean, variance,
+                      scale, offset, variance_epsilon=epsilon)
+
+    layer.initialize()
+
+    return layer.forward(input)
 
 
 def placeholder(converter: Converter, node: Any, inputs: List[str]) -> Any:
@@ -104,6 +124,42 @@ def conv2d(converter: Converter, node: Any, inputs: List[str]) -> Any:
     layer.initialize(initial_weights=w)
 
     out = layer.forward(input)
+
+    return out
+
+
+def conv2d_tranpose(converter: Converter, node: Any, inputs: List[str]) -> Any:
+    output_shape = converter.outputs[inputs[0]]
+    filter = converter.outputs[inputs[1]]
+    input = converter.outputs[inputs[2]]
+
+    shape = [i.size for i in filter.attr["value"].tensor.tensor_shape.dim]
+    dtype = filter.attr["dtype"].type
+    format = node.attr["data_format"].s.decode('ascii')
+
+    layer = Conv2D(
+        input.shape.as_list(), shape,
+        strides=int(node.attr["strides"].list.i[0]),
+        padding=node.attr["padding"].s.decode('ascii'),
+        channels_first=format == "NCHW"
+    )
+
+    if dtype == tf.float32:
+        nums = array.array('f', filter.attr["value"].tensor.tensor_content)
+    elif dtype == tf.float64:
+        nums = array.array('d', filter.attr["value"].tensor.tensor_content)
+    else:
+        raise TypeError("Unsupported dtype for weights")
+
+    provider = ConvertInputProvider(converter.weights_provider,
+                                    np.array(nums).reshape(shape))
+    w = converter.protocol.define_private_input(provider)
+
+    layer.initialize(initial_weights=w)
+
+    out = layer.forward(input)
+
+    print(output_shape)
 
     return out
 

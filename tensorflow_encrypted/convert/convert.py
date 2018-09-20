@@ -47,7 +47,6 @@ class Converter():
 
         for output, inputs in name_to_input_name.items():
             node = name_to_node[output]
-
             if node.op == "Placeholder":
                 try:
                     count, item = iter.__next__()
