@@ -58,9 +58,9 @@ def train():
     x = tf.placeholder(tf.float32, [None, 784], name='x-input')
     y_ = tf.placeholder(tf.int64, [None], name='y-input')
 
-  with tf.name_scope('input_reshape'):
-    image_shaped_input = tf.reshape(x, [-1, 28, 28, 1])
-    tf.summary.image('input', image_shaped_input, 10)
+  #with tf.name_scope('input_reshape'):
+  #  image_shaped_input = tf.reshape(x, [-1, 28, 28, 1])
+  # tf.summary.image('input', image_shaped_input, 10)
 
   # We can't initialize these variables to 0 - the network will get stuck.
   def weight_variable(shape):
@@ -251,7 +251,7 @@ def train():
   pb_filename = '/test_data/network_a.pb'
   export_to_pb(sess, y, current_dir + pb_filename)
   np_filename = '/test_data/mnist_input_network_a.npy'
-  np.save(current_dir + np_filename, mnist.test.images[0])
+  np.save(current_dir + np_filename, mnist.test.images[1].reshape(1,784))
   train_writer.close()
   test_writer.close()
 
