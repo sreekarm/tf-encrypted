@@ -43,13 +43,11 @@ ITERATIONS = 60000 // BATCH_SIZE
 EPOCHS = 15
 IN_DIM = 28
 KERNEL = 5
-STRIDE = 1
+STRIDE = 2
 IN_CHANNELS = 1
-HIDDEN_C1 = 6
-HIDDEN_C2 = 16
-HIDDEN_FC1 = 256
-HIDDEN_FC2 = 120
-HIDDEN_FC3 = 84
+HIDDEN_CHANNELS = 5
+HIDDEN_FC1 = 180
+HIDDEN_FC2 = 100
 OUT_N = 10
 
 def train():
@@ -105,29 +103,21 @@ def train():
   Wconv1 = weight_variable([KERNEL,
                             KERNEL,
                             IN_CHANNELS,
-                            HIDDEN_C1], 1.)
-  bconv1 = bias_variable([1, 1, HIDDEN_C1])
-  Wconv2 = weight_variable([KERNEL,
-                            KERNEL,
-                            HIDDEN_C1,
-                            HIDDEN_C2], 1.)
-  bconv2 = bias_variable([1, 1, HIDDEN_C2])
+                            HIDDEN_CHANNELS], 1.)
+  bconv1 = bias_variable([1, 1, HIDDEN_CHANNELS])
   Wfc1 = weight_variable([HIDDEN_FC1, HIDDEN_FC2], 1.)
   bfc1 = bias_variable([HIDDEN_FC2])
-  Wfc2 = weight_variable([HIDDEN_FC2, HIDDEN_FC3], 1.)
-  bfc2 = bias_variable([HIDDEN_FC3])
-  Wfc3 = weight_variable([HIDDEN_FC3, OUT_N], 1.)
-  bfc3 = bias_variable([OUT_N])
-  params = [Wconv1, bconv1, Wconv2, bconv2, Wfc1, bfc1, Wfc2, bfc2, Wfc3, bfc3]
-
+  Wfc2 = weight_variable([HIDDEN_FC2, OUT_N], 1.)
+  bfc2 = bias_variable([OUT_N])
+  params = [Wconv1, bconv1, Wfc1, bfc1, Wfc2, bfc2]
   # model construction
   x_image = tf.reshape(x, [-1, IN_DIM, IN_DIM, 1])
   layer1 = pooling(tf.nn.relu(conv2d(x_image, Wconv1, STRIDE) + bconv1))
-  layer2 = pooling(tf.nn.relu(conv2d(layer1, Wconv2, STRIDE) + bconv2))
-  layer2 = tf.reshape(layer2, [-1, HIDDEN_FC1])
-  layer3 = tf.nn.relu(tf.matmul(layer2, Wfc1) + bfc1)
-  layer4 = tf.nn.relu(tf.matmul(layer3, Wfc2) + bfc2)
-  y = tf.matmul(layer4, Wfc3) + bfc3
+  layer1 = tf.reshape(layer1, [-1, HIDDEN_FC1])
+  layer2 = tf.nn.relu(tf.matmul(layer1, Wfc1) + bfc1)
+  print(layer2.shape)
+  y = tf.matmul(layer2, Wfc2) + bfc2
+  print(y)
 
 
   with tf.name_scope('cross_entropy'):
@@ -200,9 +190,9 @@ def train():
         train_writer.add_summary(summary, i)
 
   current_dir = os.getcwd()
-  pb_filename = '/test_data/network_c_relu_issue.pb'
+  pb_filename = '/test_data/network_d.pb'
   export_to_pb(sess, y, current_dir + pb_filename)
-  np_filename = '/test_data/mnist_input_network_c.npy'
+  np_filename = '/test_data/mnist_input_network_d.npy'
   np.save(current_dir + np_filename, mnist.test.images[0].reshape(1,784))
   train_writer.close()
   test_writer.close()
