@@ -13,6 +13,8 @@ import tensorflow_encrypted as tfe
 parser = argparse.ArgumentParser(description='Runs the specified model with the specified input')
 parser.add_argument('model_path', type=str, help='path to model')
 parser.add_argument('input_path', type=str, help='path to input to model')
+parser.add_argument('log_output_path', type=str, help='path to prediction output')
+
 args = parser.parse_args()
 
 model_path = args.model_path
@@ -50,3 +52,4 @@ with tfe.protocol.Pond(*config.get_players('server0, server1, crypto_producer'))
         print("running")
         output = x.reveal().eval(sess, tag='prediction')
         print(output)
+        np.save(args.log_output_path, output)

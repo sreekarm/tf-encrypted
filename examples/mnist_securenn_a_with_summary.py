@@ -223,7 +223,7 @@ def train():
       xs, ys = mnist.train.next_batch(100, fake_data=FLAGS.fake_data)
       #k = FLAGS.dropout
     else:
-      xs, ys = mnist.test.images, mnist.test.labels
+          xs, ys = mnist.test.images, mnist.test.labels
       #k = 1.0
     return {x: xs, y_: ys}
 
@@ -246,6 +246,11 @@ def train():
       else:  # Record a summary
         summary, _ = sess.run([merged, train_step], feed_dict=feed_dict(True))
         train_writer.add_summary(summary, i)
+
+  x_100, y_100 = mnist.test.images[:100], mnist.test.labels[:100]
+  summary, acc, pred = sess.run([merged, accuracy, y], feed_dict={x: x_100, y_: y_100})
+  print("Accuracy on batch_100", acc)
+  np.save('../examples/test_data/network_a_tf_output_100.npy', pred)
 
   current_dir = os.getcwd()
   pb_filename = '/test_data/network_a.pb'
