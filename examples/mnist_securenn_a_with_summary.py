@@ -30,6 +30,8 @@ import sys
 
 import tensorflow as tf
 
+import numpy as np
+
 import math
 
 from tensorflow.examples.tutorials.mnist import input_data
@@ -244,9 +246,29 @@ def train():
       else:  # Record a summary
         summary, _ = sess.run([merged, train_step], feed_dict=feed_dict(True))
         train_writer.add_summary(summary, i)
+
+  current_dir = os.getcwd()
+  pb_filename = '/test_data/network_a.pb'
+  export_to_pb(sess, y, current_dir + pb_filename)
+  np_filename = '/test_data/mnist_input_network_a.npy'
+  np.save(current_dir + np_filename, mnist.test.images[0])
   train_writer.close()
   test_writer.close()
 
+from tensorflow.python.framework import graph_io
+from tensorflow.python.framework import graph_util
+
+def export_to_pb(sess, x, filename):
+    pred_names = ['output']
+    tf.identity(x, name=pred_names[0])
+
+    graph = graph_util.convert_variables_to_constants(sess, sess.graph.as_graph_def(), pred_names)
+
+    graph = graph_util.remove_training_nodes(graph)
+    path = graph_io.write_graph(graph, ".", filename, as_text=False)
+    print('saved the frozen graph (ready for inference) at: ', filename)
+
+    return path
 
 def main(_):
   if tf.gfile.Exists(FLAGS.log_dir):
