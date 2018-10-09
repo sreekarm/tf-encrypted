@@ -106,7 +106,6 @@ class ModelTrainer(tfe.io.InputProvider):
                      print('step %d, training accuracy %g' % (i, train_accuracy))
                 train_step.run(feed_dict={x: x_b, y_: y_b})
 
-
             #loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(logits=predictions, labels=y))
             #with tf.control_dependencies([optimizer.minimize(loss)]):
         #        return i + 1
