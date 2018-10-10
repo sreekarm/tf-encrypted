@@ -8,6 +8,9 @@ import tensorflow_encrypted as tfe
 
 from examples.mnist.convert import decode
 
+from tensorflow.examples.tutorials.mnist import input_data
+
+
 
 if len(sys.argv) >= 2:
     # config file was specified
@@ -35,19 +38,22 @@ class ModelTrainer(tfe.io.InputProvider):
 
     def build_data_pipeline(self):
 
-        def normalize(image, label):
-            x = tf.cast(image, tf.float32) / 255.
-            image = (x - 0.1307) / 0.3081  # image = (x - mean) / std
-            return image, label
+        # def normalize(image, label):
+        #     x = tf.cast(image, tf.float32) / 255.
+        #     image = (x - 0.1307) / 0.3081  # image = (x - mean) / std
+        #     return image, label
+        #
+        # dataset = tf.data.TFRecordDataset(["./data/train.tfrecord"])
+        # dataset = dataset.map(decode)
+        # dataset = dataset.map(normalize)
+        # dataset = dataset.repeat()
+        # dataset = dataset.batch(self.BATCH_SIZE)
+        #
+        # iterator = dataset.make_one_shot_iterator()
+        # return iterator
+        data = input_data.read_data_sets('/tmp/')
 
-        dataset = tf.data.TFRecordDataset(["./data/train.tfrecord"])
-        dataset = dataset.map(decode)
-        dataset = dataset.map(normalize)
-        dataset = dataset.repeat()
-        dataset = dataset.batch(self.BATCH_SIZE)
-
-        iterator = dataset.make_one_shot_iterator()
-        return iterator
+        return data
 
     def build_training_graph(self, training_data) -> List[tf.Tensor]:
         j = self.IN_N
@@ -58,48 +64,69 @@ class ModelTrainer(tfe.io.InputProvider):
         r_out = math.sqrt(12 / (k + m))
 
         # model parameters and initial values
-        w0 = tf.Variable(tf.random_uniform([j, k], minval=-r_in, maxval=r_in))
-        b0 = tf.Variable(tf.zeros([k]))
-        w1 = tf.Variable(tf.random_uniform([k, k], minval=-r_hid, maxval=r_hid))
-        b1 = tf.Variable(tf.zeros([k]))
-        w2 = tf.Variable(tf.random_uniform([k, m], minval=-r_out, maxval=r_out))
-        b2 = tf.Variable(tf.zeros([m]))
+        with tf.device('/CPU:0'):
+            w0 = tf.Variable(tf.random_uniform([j, k], minval=-r_in, maxval=r_in))
+        with tf.device('/CPU:0'):
+            b0 = tf.Variable(tf.zeros([k]))
+        with tf.device('/CPU:0'):
+            w1 = tf.Variable(tf.random_uniform([k, k], minval=-r_hid, maxval=r_hid))
+        with tf.device('/CPU:0'):
+            b1 = tf.Variable(tf.zeros([k]))
+        with tf.device('/CPU:0'):
+            w2 = tf.Variable(tf.random_uniform([k, m], minval=-r_out, maxval=r_out))
+        with tf.device('/CPU:0'):
+            b2 = tf.Variable(tf.zeros([m]))
         params = [w0, b0, w1, b1, w2, b2]
 
         with tf.name_scope('input'):
-            x = tf.placeholder(tf.float32, [None, 784], name='x-input')
-            y_ = tf.placeholder(tf.int64, [None], name='y-input')
+            with tf.device('/CPU:0'):
+                x = tf.placeholder(tf.float32, [None, 784], name='x-input')
+            with tf.device('/CPU:0'):
+                y_ = tf.placeholder(tf.int64, [None], name='y-input')
 
         # optimizer and data pipeline
         optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
 
         # model construction
         layer0 = x
-        layer1 = tf.nn.relu(tf.matmul(layer0, w0) + b0)
-        layer2 = tf.nn.relu(tf.matmul(layer1, w1) + b1)
-        layer3 = tf.matmul(layer2, w2) + b2
+        with tf.device('/CPU:0'):
+            layer1 = tf.matmul(layer0, w0) + b0
+        with tf.device('/CPU:0'):
+            layer1 = tf.nn.relu(layer1)
+        with tf.device('/CPU:0'):
+            layer2 = tf.matmul(layer1, w1) + b1
+        with tf.device('/CPU:0'):
+            layer2 = tf.nn.relu(layer2)
+        with tf.device('/CPU:0'):
+            layer3 = tf.matmul(layer2, w2) + b2
         predictions = layer3
 
         with tf.name_scope('loss'):
-            cross_entropy = tf.losses.sparse_softmax_cross_entropy(
-                labels=y_, logits=predictions)
-            cross_entropy = tf.reduce_mean(cross_entropy)
+            with tf.device('/CPU:0'):
+                cross_entropy = tf.losses.sparse_softmax_cross_entropy(
+                    labels=y_, logits=predictions)
+            with tf.device('/CPU:0'):
+                cross_entropy = tf.reduce_mean(cross_entropy)
 
         with tf.name_scope('train'):
              #extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
              #with tf.control_dependencies(extra_update_ops):
-             train_step = tf.train.AdamOptimizer(1e-2).minimize(cross_entropy)
+            with tf.device('/CPU:0'):
+                 train_step = tf.train.AdamOptimizer(1e-2).minimize(cross_entropy)
 
         with tf.name_scope('accuracy'):
-            correct_prediction = tf.equal(tf.argmax(predictions, 1), y_)
-            correct_prediction = tf.cast(correct_prediction, tf.float32)
-            accuracy = tf.reduce_mean(correct_prediction)
+            with tf.device('/CPU:0'):
+                correct_prediction = tf.equal(tf.argmax(predictions, 1), y_)
+            with tf.device('/CPU:0'):
+                correct_prediction = tf.cast(correct_prediction, tf.float32)
+            with tf.device('/CPU:0'):
+                accuracy = tf.reduce_mean(correct_prediction)
 
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             for i in range(1000):
                 # get next batch
-                x_b, y_b = training_data.get_next()
+                x_b, y_b = training_data.train.next_batch(16)
                 if i % 100 == 0:
                      train_accuracy = accuracy.eval(feed_dict={
                          x: x_b, y_: y_b})
@@ -124,7 +151,6 @@ class ModelTrainer(tfe.io.InputProvider):
 
         with tf.name_scope('training'):
             parameters = self.build_training_graph(training_data)
-            print(parameters.shape)
         return parameters
 
 
@@ -179,7 +205,7 @@ with tfe.protocol.Pond(server0, server1, crypto_producer) as prot:
     params = prot.define_private_input(model_trainer, masked=True)  # pylint: disable=E0632
 
     # we'll use the same parameters for each prediction so we cache them to avoid re-training each time
-    params = prot.cache(params)
+    #params = prot.cache(params)
 
     # get prediction input from client
     x, = prot.define_private_input(prediction_client, masked=True)  # pylint: disable=E0632
@@ -203,6 +229,6 @@ with tfe.Session() as sess:
     print("Training")
     sess.run(tfe.global_caches_updator(), tag='training')
 #
-#     for _ in range(5):
-#         print("Predicting")
-#         sess.run(prediction_op, tag='prediction')
+    for _ in range(5):
+        print("Predicting")
+        sess.run(prediction_op, tag='prediction')
