@@ -28,7 +28,7 @@ class ModelTrainer(tfe.io.InputProvider):
 
     BATCH_SIZE = 32
     ITERATIONS = 60000 // BATCH_SIZE
-    EPOCHS = 15
+    EPOCHS = 1
     IN_N = 28 * 28
     HIDDEN_N = 128
     OUT_N = 10
@@ -87,7 +87,6 @@ class ModelTrainer(tfe.io.InputProvider):
                 return i + 1
 
         loop = tf.while_loop(lambda i: i < self.ITERATIONS * self.EPOCHS, loop_body, (0,))
-
         # return model parameters after training
         loop = tf.Print(loop, [], message="Training complete")
         with tf.control_dependencies([loop]):
@@ -148,7 +147,7 @@ server1 = config.get_player('server1')
 crypto_producer = config.get_player('crypto-producer')
 
 with tfe.protocol.Pond(server0, server1, crypto_producer) as prot:
-
+    print(model_trainer.player.device_name)
     # get model parameters as private tensors from model owner
     params = prot.define_private_input(model_trainer, masked=True)  # pylint: disable=E0632
 
