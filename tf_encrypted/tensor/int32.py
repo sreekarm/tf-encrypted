@@ -163,6 +163,10 @@ class Int32Tensor(AbstractTensor):
     def mod(self, k: int) -> 'Int32Tensor':
         return int32factory.tensor(self.value % k)
 
+    def floormod(self, other: Any) -> 'Int32Tensor':
+        x, y = _lift(self, other)
+        return int32factory.tensor(tf.floormod(x.value, y.value))
+
     def transpose(self, perm: Union[List[int], Tuple[int]]) -> 'Int32Tensor':
         return int32factory.tensor(tf.transpose(self.value, perm))
 

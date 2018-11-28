@@ -11,7 +11,7 @@ from .crt import (
     gen_crt_add, gen_crt_sub, gen_crt_mul, gen_crt_matmul, gen_crt_mod,
     gen_crt_reduce_sum, gen_crt_cumsum, crt_im2col, crt_matmul_split,
     crt_batch_to_space_nd, crt_space_to_batch_nd, gen_crt_equal_zero,
-    gen_crt_equal, gen_crt_sample_uniform, gen_crt_sample_bounded
+    gen_crt_equal, gen_crt_sample_uniform, gen_crt_sample_bounded, gen_crt_floormod
 )
 from .helpers import prod, inverse
 from .factory import (AbstractFactory, AbstractTensor, AbstractVariable,
@@ -53,6 +53,7 @@ _crt_equal_zero = gen_crt_equal_zero(m, INT_TYPE)
 _crt_equal = gen_crt_equal(m, INT_TYPE)
 _crt_sample_uniform = gen_crt_sample_uniform(m, INT_TYPE)
 _crt_sample_bounded = gen_crt_sample_bounded(m, INT_TYPE)
+_crt_floormod = gen_crt_floormod(m)
 
 Backing = Union[List[np.ndarray], List[tf.Tensor]]
 
@@ -318,6 +319,10 @@ class Int100Tensor(AbstractTensor):
 
     def mod(self, k: int) -> 'Int100Tensor':
         return Int100Tensor(_crt_decompose(_crt_mod(self.backing, k)))
+
+    def floormod(self, other) -> 'Int100Tensor':
+        x, y = Int100Tensor.lift(self), Int100Tensor.lift(other)
+        return Int100Tensor(_crt_floormod(x.backing, y.backing))
 
     def reduce_sum(self, axis=None, keepdims=None) -> 'Int100Tensor':
         backing = _crt_reduce_sum(self.backing, axis, keepdims)

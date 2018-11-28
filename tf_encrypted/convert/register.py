@@ -35,6 +35,7 @@ def register() -> Dict[str, Any]:
         # 'Pack': pack,
         'MaxPool': maxpool,
         'Pad': pad,
+        'FloorMod': floormod,
     }
 
     return reg
@@ -366,6 +367,22 @@ def concat(converter: Converter, node: Any, inputs: List[str]) -> Any:
     axis = converter.outputs[inputs[2]]
 
     return converter.protocol.concat([input0, input1], axis.attr["value"].tensor.int_val[0])
+
+def floormod(converter: Converter, node: Any, inputs: List[str]) -> Any:
+    input0 = converter.outputs[inputs[0]]
+    input1 = converter.outputs[inputs[1]]
+
+    input0_public = input0.reveal()
+    nums = array.array('f', input1.attr["value"].tensor.tensor_content)
+    print(nums)
+    #input0_public = nodef_to_public_pond(converter, input0)
+    
+    #print(input0_public.decode())
+
+    input1_public = nodef_to_public_pond(converter, input1)
+    print(input1_public.unwrapped)
+
+    return converter.protocol.floormod(input0_public, input1_public)
 
 
 def nodef_to_public_pond(converter: Converter, x: Any) -> PondPublicTensor:

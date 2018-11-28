@@ -1075,6 +1075,13 @@ class Pond(Protocol):
     def space_to_batch_nd(self, x, block_shape, paddings):
         return self.dispatch("space_to_batch_nd", x, block_shape, paddings)
 
+    def floormod(self, x, y):
+        if isinstance(x, PondPublicTensor):
+            return _floormod_public(self, x, y)
+        else:
+            print("bug yay")
+        
+
     @memoize
     def equal(self, x, y):
         x, y = self.lift(x, y)
@@ -3697,3 +3704,25 @@ def _zeros_public(
 
     x = PondPublicTensor(prot, x0, x1, apply_scaling)
     return x
+
+
+#
+# FloorMod
+#
+
+def _floormod_public(
+     prot: Pond, x: PondPublicTensor, y: PondPublicTensor
+) -> PondPublicTensor:
+
+    x_on_0, x_on_1 = x.unwrapped
+    y_on_0, y_on_1 = y.unwrapped
+
+    with tf.name_scope("equal"):
+
+        with tf.device(prot.server_0.device_name):
+            z_on_0 = x_on_0.floormod(y_on_0)
+
+        with tf.device(prot.server_0.device_name):
+            z_on_1 = x_on_1.floormod(y_on_1)
+
+    return PondPublicTensor(prot, z_on_0, z_on_1, False)
