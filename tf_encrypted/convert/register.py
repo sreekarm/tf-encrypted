@@ -378,8 +378,14 @@ def floormod(converter: Converter, node: Any, inputs: List[str]) -> Any:
     #input0_public = nodef_to_public_pond(converter, input0)
     input1_public = nodef_to_public_pond(converter, input1)
 
+    #decoded = converter.protocol._decode(input0.value_on_0, True)
+    #print(decoded)
 
-    return converter.protocol.floormod(input0_public, input1_public)
+    inputter_fn = lambda: tf.floormod(input0_public.decode(), np.array(nums).reshape(4,1))
+
+    x = converter.protocol.define_public_input(converter.model_provider, inputter_fn)
+    return(x)
+    #return converter.protocol.floormod(input0_public, input1_public)
 
 
 def nodef_to_public_pond(converter: Converter, x: Any) -> PondPublicTensor:
