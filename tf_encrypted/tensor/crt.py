@@ -177,6 +177,13 @@ def crt_space_to_batch_nd(x, block_shape, paddings):
         return [tf.space_to_batch_nd(xi, block_shape=block_shape, paddings=paddings) for xi in x]
 
 
+def crt_floormod(x, y):
+    with tf.name_scope('crt_floormod'):
+        return [tf.floormod(xi, yi) for xi, yi in zip(x, y)]
+
+    return crt_floormod
+
+
 def gen_crt_sample_uniform(m, int_type):
 
     def crt_sample_uniform(shape):

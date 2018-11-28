@@ -376,11 +376,8 @@ def floormod(converter: Converter, node: Any, inputs: List[str]) -> Any:
     nums = array.array('f', input1.attr["value"].tensor.tensor_content)
     print(nums)
     #input0_public = nodef_to_public_pond(converter, input0)
-    
-    #print(input0_public.decode())
-
     input1_public = nodef_to_public_pond(converter, input1)
-    print(input1_public.unwrapped)
+
 
     return converter.protocol.floormod(input0_public, input1_public)
 

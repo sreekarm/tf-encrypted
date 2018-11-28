@@ -3725,4 +3725,5 @@ def _floormod_public(
         with tf.device(prot.server_0.device_name):
             z_on_1 = x_on_1.floormod(y_on_1)
 
-    return PondPublicTensor(prot, z_on_0, z_on_1, False)
+    return PondPublicTensor(prot, z_on_0, z_on_1, x.is_scaled)
+    #return PondPrivateTensor(prot, z_on_0, z_on_1, x.is_scaled)
