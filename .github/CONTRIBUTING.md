@@ -18,7 +18,7 @@ While you may be asked to make changes to your submission during the review proc
 
 ## Commit history and merging
 
-For the sake of transparency our key rule is to keep a logical andn intelligible commit history, meaning anyone stepping through the commits on either the `master` branch or as part of a review should be able to easily follow the changes made and their potential implications.
+For the sake of transparency our key rule is to keep a logical and intelligible commit history, meaning anyone stepping through the commits on either the `master` branch or as part of a review should be able to easily follow the changes made and their potential implications.
 
 To this end we ask all contributors to sanitise pull requests before submitting them as our preferred way of merging pull requests is rebasing.
 
@@ -28,7 +28,7 @@ Some guidelines:
 
 - progressions that have no logical justification for being split into several commits should be squeezed
 
-- code does not have to compile or pass all tests at each commit; but leave a remark and plan in the commit description so a reviewer is aware and can plan accordingly
+- code does not have to compile or pass all tests at each commit, but leave a remark and a plan in the commit description so reviewers are aware and can plan accordingly
 
 Useful tricks:
 
